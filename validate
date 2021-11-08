@@ -76,3 +76,21 @@ if __name__ == '__main__':
             print '\t' + '\t'.join(map(str, i))
     else:
         print s + ' is invalid, and cannot be reduced to E'
+
+	
+	
+1+1) is valid, it can be reduced to E
+	1+1)	(0, 0) N => 1
+	N+1)	(0, 0) P => N
+	P+1)	(0, 0) M => M*P
+	M+1)	(0, 0) A => A+M
+	A+1)	(2, 2) N => 1
+	A+N)	(2, 2) P => N
+	A+P)	(2, 2) M => P
+	A+M)	(0, 2) A => A+M
+	A)	(0, 0) E => A
+	E)	(0, 1) P => (E)
+	P	(0, 0) M => M*P
+	M	(0, 0) A => A+M
+	A	(0, 0) E => A
+	E
