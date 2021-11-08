@@ -15,9 +15,9 @@ rules = {
 #target为终止状态，即最后的可接受状态
 def back(st, target):
     reduced_sets = set()
-	#cur为当前规约后的字符串，hist为记录的规约规则
+    #cur为当前规约后的字符串，hist为记录的规约规则
     def _back(cur, hist, idx):
-		print "----Enter _back----\n"
+        print "----Enter _back----\n"
         print "cur:%s\n" % cur
         print "hist:%s\n" % hist
         print "idx:%d\n" % idx
@@ -28,40 +28,68 @@ def back(st, target):
         hist.append(cur)
         if cur == target:
             ans.append(hist)
-        #遍历字符串中每个字符
+        #遍历字符串中每个字符，当根据sub[i:j+1]获取栈中字符串在规约规则中未找到满足条件的规则则递增i，根据子串再次查找规约规则
         for i in range(len(cur)):
-			#从位置j向后扫描token，因为例子中的token都是单字符，所以此处实际省略了词法分析获取token的过程
+            #从位置j向后扫描token，因为例子中的token都是单字符，所以此处实际省略了词法分析获取token的过程。idx即代表当前栈中的最后一个token的索引。如果当轮查找未找到可以规约的规则则不会递归进入_back函数，递增j，相当于向前看一个token，继续查找规则。如果j遍历到结尾也没有查找到规则则递增i，使用栈中字符串后缀继续查找
             for j in range(max(i, idx), len(cur)):
-				#读取已规约字符串，相当于栈中存在的字符串，j+1位置为lookahead token
+                #读取已规约字符串，相当于栈中存在的字符串，j+1位置为lookahead token，sub获取的字符串不包含j+1指向的字符
                 sub = cur[i:j+1]
-				print "sub:%s\n" % sub
-                #遍历每条规则
+                print "sub:%s\n" % sub
+                #遍历每条规则，根据栈中token字符串查找移动或者规约规则
                 for r in rules:
                     print "r:%s\n" % r
-					#查找用于规约的规则，rr为规约规则
+                    #查找用于规约的规则，rr为规约规则
                     for rr in rules[r]:
-						print "rules[r]:%s rr:%s\n" % (rules[r], rr)
+                        print "rules[r]:%s rr:%s\n" % (rules[r], rr)
                         work = False
                         if i == 0:
+                            #栈中字符串为规约规则的后缀，则shift
                             work = (work or rr[-(j-i+1):] == sub)
+                            if work:
+                                print "%d|%d|%s|%s|rr[-(j-i+1):] == sub\n" % (i, j, rr, sub)
                         if j == len(cur) - 1:
-							#当前栈中已规约字符串是rr规约规则的后缀，则可以进行规约
+                            #当前栈中已规约字符串是rr规约规则的前缀，则可以进行规约
                             work = (work or rr[:(j-i+1)] == sub)
-						#整个栈中的字符串被包含在某条规约规则中，相当于是一个完整语句中的中间片段，没有头部和尾部，只有整个字符串扫描完毕这种情况才成立，如果字符串还未扫描完，则包含情况不能规约，只有是后缀时才能规约。
+                            if work:
+                                print "%d|%d|%s|%s|rr[:(j-i+1)] == sub\n"     % (i, j, rr, sub)
+                        #整个栈中的字符串被包含在某条规约规则中，相当于是一个完整语句中的中间片段，没有头部和尾部，只有整个字符串扫描完毕这种情况才成立，如果字符串还未扫描完，则包含情况不能规约，只有是后缀时才能规约。
                         if i == 0 and j == len(cur) - 1:
-							#当前规约规则包含栈中
+                            #当前规约规则包含栈中
                             work = (work or (sub in rr))
-						#规约规则右边字符串等于栈中字符串，可以规约
+                            if work:
+                                print "%d|%d|%s|%s|sub in rr\n" % (i,j, rr, sub)
+                        #规约规则右边字符串等于栈中字符串，可以规约
                         work = (work or (sub == rr))
                         if work:
-							#cur中需要按照规约规则把规约后字符替换规则右边字符
+                            #cur中需要按照规约规则把规约后字符替换规则右边字符，第三个参数i+len(r)-1决定了_back函数中内层迭代j的起始值。i为当前栈中的token个数，len(r)为规约后的token的长度，i+len(r)即为当前栈中token数目，i+len(r)-1为栈中索引
+                            print "%d|%d|%s|%s|sub == rr\n" % (i,j, rr, sub)
                             vv = _back(
                                 cur[:i] + r + cur[j+1:]
                                 , hist + ['(%d, %d) %s => %s\n' % (i, j, r,
 rr)], i + len(r) -1)
                             ans += vv
+
+        print "\n"
         return ans
     return _back(st, [], 0)
+
+
+#1+1) is valid, it can be reduced to E
+#	1+1)	(0, 0) N => 1
+#	N+1)	(0, 0) P => N
+#	P+1)	(0, 0) M => M*P
+#	M+1)	(0, 0) A => A+M
+#	A+1)	(2, 2) N => 1
+#	A+N)	(2, 2) P => N
+#	A+P)	(2, 2) M => P
+#	A+M)	(0, 2) A => A+M
+#	A)	(0, 0) E => A
+#	E)	(0, 1) P => (E)
+#	P	(0, 0) M => M*P
+#	M	(0, 0) A => A+M
+#	A	(0, 0) E => A
+#	E
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -76,21 +104,3 @@ if __name__ == '__main__':
             print '\t' + '\t'.join(map(str, i))
     else:
         print s + ' is invalid, and cannot be reduced to E'
-
-	
-	
-1+1) is valid, it can be reduced to E
-	1+1)	(0, 0) N => 1
-	N+1)	(0, 0) P => N
-	P+1)	(0, 0) M => M*P
-	M+1)	(0, 0) A => A+M
-	A+1)	(2, 2) N => 1
-	A+N)	(2, 2) P => N
-	A+P)	(2, 2) M => P
-	A+M)	(0, 2) A => A+M
-	A)	(0, 0) E => A
-	E)	(0, 1) P => (E)
-	P	(0, 0) M => M*P
-	M	(0, 0) A => A+M
-	A	(0, 0) E => A
-	E
